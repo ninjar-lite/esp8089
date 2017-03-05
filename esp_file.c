@@ -38,7 +38,7 @@ struct esp_init_table_elem esp_init_table[MAX_ATTR_NUM] = {
 	 * 0: 40MHz (default)
 	 * 1: 26MHz (ESP8266 ESP-12F)
 	 */
-	{"crystal_26M_en", 48, 0},
+	{"crystal_26M_en", 48, 1},
 	/*
 	 * Output crystal clock to pin:
 	 * 0: None
