@@ -1,3 +1,5 @@
+CONFIG_ESP8089 = m
+
 MODULE_NAME = esp8089
 
 $(MODULE_NAME)-y := esp_debug.o sdio_sif_esp.o esp_io.o \
