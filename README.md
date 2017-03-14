@@ -7,12 +7,10 @@ v1.9 imported from the Rockchip Linux kernel github repo
 
 Modified to build as a standalone module for SDIO devices.
 
-
-
-
 Building:
 
- make
+ make $CROSS\_COMPILE\_FLAGS -C $KERNEL\_SOURCE M=$PWD
+ # $CROSS\_COMPILE\_FLAGS means parameters for kernel cross-compiling (e.g. ARCH=xxx CROSS\_COMPILE=yyy-zzz-), $KERNEL\_SOURCE means the directory for kernel building (usually it's also the kernel source tree position).
 
 Using:
 
