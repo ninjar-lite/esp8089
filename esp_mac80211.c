@@ -403,7 +403,7 @@ static void drv_handle_beacon(struct timer_list *tl)
 
 	mdelay(2400 * (cycle_beacon_count % 25) % 10000 / 1000);
 
-	beacon = ieee80211_beacon_get(evif->epub->hw, vif);
+	beacon = ieee80211_beacon_get(evif->epub->hw, vif, vif->bss_conf.link_id);
 
 	tim_reach = beacon_tim_alter(beacon);
 
@@ -476,9 +476,9 @@ static int esp_op_config(struct ieee80211_hw *hw, u32 changed)
 }
 
 static void esp_op_bss_info_changed(struct ieee80211_hw *hw,
-				    struct ieee80211_vif *vif,
-				    struct ieee80211_bss_conf *info,
-				    u32 changed)
+				 struct ieee80211_vif *vif,
+				 struct ieee80211_bss_conf *info,
+				 u64 changed)
 {
 	struct esp_pub *epub = (struct esp_pub *) hw->priv;
 	struct esp_vif *evif = (struct esp_vif *) vif->drv_priv;
@@ -490,22 +490,23 @@ static void esp_op_bss_info_changed(struct ieee80211_hw *hw,
 	// sdata->u.sta.bssid
 
 	ESP_IEEE80211_DBG(ESP_DBG_OP,
-			  " %s enter: changed %x, assoc %x, bssid %pM\n",
-			  __func__, changed, info->assoc, info->bssid);
+			  " %s enter: changed %llx, assoc %x, bssid %pM\n",
+			  __func__, changed, info->assoc_capability, info->bssid);
 
 	if (vif->type == NL80211_IFTYPE_STATION) {
 		if ((changed & BSS_CHANGED_BSSID) ||
-		    ((changed & BSS_CHANGED_ASSOC) && (info->assoc))) {
+		    ((changed & BSS_CHANGED_ASSOC) && (info->assoc_capability))) {
 			ESP_IEEE80211_DBG(ESP_DBG_TRACE,
 					  " %s STA change bssid or assoc\n",
 					  __func__);
-			evif->beacon_interval = info->aid;
+			// evif->beacon_interval = info->aid;
+			evif->beacon_interval = vif->cfg.aid;
 			memcpy(epub->wl.bssid, (u8 *) info->bssid,
 			       ETH_ALEN);
 			sip_send_bss_info_update(epub, evif,
 						 (u8 *) info->bssid,
-						 info->assoc);
-		} else if ((changed & BSS_CHANGED_ASSOC) && (!info->assoc)) {
+						 info->assoc_capability);
+		} else if ((changed & BSS_CHANGED_ASSOC) && (!info->assoc_capability)) {
 			ESP_IEEE80211_DBG(ESP_DBG_TRACE,
 					  " %s STA change disassoc\n",
 					  __func__);
@@ -513,7 +514,7 @@ static void esp_op_bss_info_changed(struct ieee80211_hw *hw,
 			memset(epub->wl.bssid, 0, ETH_ALEN);
 			sip_send_bss_info_update(epub, evif,
 						 (u8 *) info->bssid,
-						 info->assoc);
+						 info->assoc_capability);
 		} else {
 			ESP_IEEE80211_DBG(ESP_DBG_TRACE,
 					  "%s wrong mode of STA mode\n",
@@ -983,13 +984,13 @@ static void esp_op_sta_notify(struct ieee80211_hw *hw,
 
 
 static int esp_op_conf_tx(struct ieee80211_hw *hw,
-			  struct ieee80211_vif *vif,
-			  u16 queue,
-			  const struct ieee80211_tx_queue_params *params)
+		       struct ieee80211_vif *vif,
+		       unsigned int link_id, u16 ac,
+		       const struct ieee80211_tx_queue_params *params)
 {
 	struct esp_pub *epub = (struct esp_pub *) hw->priv;
 	ESP_IEEE80211_DBG(ESP_DBG_TRACE, "%s enter \n", __func__);
-	return sip_send_wmm_params(epub, queue, params);
+	return sip_send_wmm_params(epub, ac, params);
 }
 
 static u64 esp_op_get_tsf(struct ieee80211_hw *hw,
@@ -1242,7 +1243,7 @@ static int esp_op_ampdu_action(struct ieee80211_hw *hw,
 	case IEEE80211_AMPDU_TX_START:
 		if (mod_support_no_txampdu() ||
 		    cfg80211_get_chandef_type(&epub->hw->conf.chandef) ==
-		    NL80211_CHAN_NO_HT || !sta->ht_cap.ht_supported)
+		    NL80211_CHAN_NO_HT || !sta->deflink.ht_cap.ht_supported)
 			return ret;
 
 		//if (vif->p2p || vif->type != NL80211_IFTYPE_STATION)
@@ -1315,7 +1316,7 @@ static int esp_op_ampdu_action(struct ieee80211_hw *hw,
 	case IEEE80211_AMPDU_RX_START:
 		if (mod_support_no_rxampdu() ||
 		    cfg80211_get_chandef_type(&epub->hw->conf.chandef) ==
-		    NL80211_CHAN_NO_HT || !sta->ht_cap.ht_supported)
+		    NL80211_CHAN_NO_HT || !sta->deflink.ht_cap.ht_supported)
 			return ret;
 
 		if ((vif->p2p && false)
