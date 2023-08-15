@@ -741,24 +741,24 @@ int sip_send_set_sta(struct esp_pub *epub, u8 ifidx, u8 set,
 	setstacmd->index = index;
 	setstacmd->set = set;
 	if (sta->aid == 0)
-		setstacmd->aid = vif->bss_conf.aid;
+		setstacmd->aid = vif->cfg.aid;
 	else
 		setstacmd->aid = sta->aid;
 	memcpy(setstacmd->mac, sta->addr, ETH_ALEN);
 	if (set) {
-		if (sta->ht_cap.ht_supported) {
-			if (sta->ht_cap.cap & IEEE80211_HT_CAP_SGI_20)
+		if (sta->deflink.ht_cap.ht_supported) {
+			if (sta->deflink.ht_cap.cap & IEEE80211_HT_CAP_SGI_20)
 				setstacmd->phymode =
 				    ESP_IEEE80211_T_HT20_S;
 			else
 				setstacmd->phymode =
 				    ESP_IEEE80211_T_HT20_L;
-			setstacmd->ampdu_factor = sta->ht_cap.ampdu_factor;
+			setstacmd->ampdu_factor = sta->deflink.ht_cap.ampdu_factor;
 			setstacmd->ampdu_density =
-			    sta->ht_cap.ampdu_density;
+			    sta->deflink.ht_cap.ampdu_density;
 		} else {
 			if (sta->
-			    supp_rates[NL80211_BAND_2GHZ] & (~(u32)
+				deflink.supp_rates[NL80211_BAND_2GHZ] & (~(u32)
 							       CONF_HW_BIT_RATE_11B_MASK))
 			{
 				setstacmd->phymode = ESP_IEEE80211_T_OFDM;
