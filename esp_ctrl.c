@@ -451,8 +451,10 @@ int sip_send_ampdu_action(struct esp_pub *epub, u8 action_num,
 	switch (action_num) {
 	case SIP_AMPDU_RX_START:
 		action->ssn = ssn;
+		fallthrough;
 	case SIP_AMPDU_RX_STOP:
 		action->index = index;
+		fallthrough;
 	case SIP_AMPDU_TX_OPERATIONAL:
 	case SIP_AMPDU_TX_STOP:
 		action->win_size = buf_size;
